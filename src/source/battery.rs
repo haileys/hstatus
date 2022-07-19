@@ -8,15 +8,14 @@ pub fn battery(path: &Path) -> impl Stream<Item = Option<String>> {
     let charge_now = stream(&path.join("charge_now"));
     let charge_full = stream(&path.join("charge_full"));
 
-    let stream = combine(charge_now, charge_full)
-        .map(|(now, full)| {
-            now.zip(full).map(|(now, full)| {
-                let percent = now * 100 / full;
-                format!("{}%", percent)
-            })
-        });
-
-    dedup(stream)
+    dedup(
+        combine(charge_now, charge_full)
+            .map(|(now, full)| {
+                now.zip(full).map(|(now, full)| {
+                    let percent = now * 100 / full;
+                    format!("{}%", percent)
+                })
+            }))
 }
 
 fn stream(path: &Path) -> impl Stream<Item = Option<i32>> {
