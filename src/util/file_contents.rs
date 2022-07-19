@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use tokio_stream::wrappers::IntervalStream;
 
-pub fn strings(path: &Path) -> impl Stream<Item = Option<String>> {
+pub fn strings<'a>(path: &'a Path) -> impl Stream<Item = Option<String>> {
     let path = path.to_owned();
 
     // TODO - use inotify or something

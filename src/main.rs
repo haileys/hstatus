@@ -8,7 +8,7 @@ use futures::stream::StreamExt;
 #[tokio::main]
 async fn main() {
     let status = status::LineBuilder::new()
-        .segment("🔋 ", source::battery::battery())
+        .segment("🔋 ", source::battery::battery(Path::new("/sys/class/power_supply/BAT0")))
         .segment("📶 ", source::wifi::ssid(Path::new("/var/run/wpa_supplicant/wlp4s0")))
         .segment("🕒 ", source::clock::clock())
         .build()

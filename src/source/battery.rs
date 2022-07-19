@@ -4,9 +4,9 @@ use std::path::Path;
 use crate::util::file_contents;
 use crate::util::stream::{combine, dedup};
 
-pub fn battery() -> impl Stream<Item = Option<String>> {
-    let charge_now = stream(Path::new("/sys/class/power_supply/BAT0/charge_now"));
-    let charge_full = stream(Path::new("/sys/class/power_supply/BAT0/charge_full"));
+pub fn battery(path: &Path) -> impl Stream<Item = Option<String>> {
+    let charge_now = stream(&path.join("charge_now"));
+    let charge_full = stream(&path.join("charge_full"));
 
     let stream = combine(charge_now, charge_full)
         .map(|(now, full)| {
