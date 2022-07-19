@@ -39,9 +39,6 @@ pub enum Error {
     /// Represents a failed `ATTACH` request to wpasupplicant.
     Attach,
 
-    /// Represents a failed `DETACH` request to wpasupplicant.
-    Detach,
-
     /// Error waiting for a response
     Wait
 }
@@ -51,7 +48,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match *self {
-            Self::Attach|Self::Detach|Self::Wait => None,
+            Self::Attach|Self::Wait => None,
             Self::Io(ref source) => Some(source),
             Self::Utf8ToStr(ref source) => Some(source),
         }
@@ -63,9 +60,6 @@ impl std::fmt::Display for Error {
         match *self {
             Self::Attach => {
                 write!(f, "Failed to attach to wpasupplicant")
-            }
-            Self::Detach => {
-                write!(f, "Failed to detach from wpasupplicant")
             }
             Self::Wait => {
                 write!(f, "Unable to wait for response from wpasupplicant")
@@ -110,28 +104,6 @@ pub struct ClientBuilder {
 }
 
 impl ClientBuilder {
-    /// A path-like object for this application's UNIX domain socket
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use wpactrl::Client;
-    /// let wpa = Client::builder()
-    ///             .cli_path("/tmp")
-    ///             .open()
-    ///             .unwrap();
-    /// ```
-    #[must_use]
-    pub fn cli_path<I, P>(mut self, cli_path: I) -> Self
-    where
-        I: Into<Option<P>>,
-        P: AsRef<Path> + Sized,
-        PathBuf: From<P>,
-    {
-        self.cli_path = cli_path.into().map(PathBuf::from);
-        self
-    }
-
     /// A path-like object for the `wpa_supplicant` / `hostapd` UNIX domain sockets
     ///
     /// # Examples
@@ -325,31 +297,6 @@ impl Client {
             Err(Error::Attach)
         }
     }
-
-    /// Send a command to `wpa_supplicant` / `hostapd`.
-    ///
-    /// Commands are generally identical to those used in `wpa_cli`,
-    /// except all uppercase (eg `LIST_NETWORKS`, `SCAN`, etc)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut wpa = wpactrl::Client::builder().open().unwrap();
-    /// assert_eq!(wpa.request("PING").unwrap(), "PONG\n");
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// * [`Error::Io`] - Low-level I/O error
-    /// * [`Error::Utf8ToStr`] - Corrupted message or message with non-UTF8 characters
-    /// * [`Error::Wait`] - Failed to wait on underlying Unix socket
-    pub fn request(&mut self, cmd: &str) -> Result<String> {
-        self.0.request(cmd, |_: &str| ())
-    }
-
-    pub fn send_request(&mut self, cmd: &str) -> Result<()> {
-        self.0.send_request(cmd)
-    }
 }
 
 impl AsRawFd for Client {
@@ -362,29 +309,6 @@ impl AsRawFd for Client {
 pub struct ClientAttached(ClientInternal, VecDeque<String>);
 
 impl ClientAttached {
-    /// Stop listening for and discard any remaining control interface messages
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut wpa = wpactrl::Client::builder().open().unwrap().attach().unwrap();
-    /// wpa.detach().unwrap();
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// * [`Error::Detach`] - Unexpected (non-OK) response
-    /// * [`Error::Io`] - Low-level I/O error
-    /// * [`Error::Utf8ToStr`] - Corrupted message or message with non-UTF8 characters
-    /// * [`Error::Wait`] - Failed to wait on underlying Unix socket
-    pub fn detach(mut self) -> Result<Client> {
-        if self.0.request("DETACH", |_: &str| ())? == "OK\n" {
-            Ok(Client(self.0))
-        } else {
-            Err(Error::Detach)
-        }
-    }
-
     /// Receive the next control interface message.
     ///
     /// Note that multiple control interface messages can be pending;
@@ -408,33 +332,6 @@ impl ClientAttached {
         } else {
             self.0.recv()
         }
-    }
-
-    /// Send a command to `wpa_supplicant` / `hostapd`.
-    ///
-    /// Commands are generally identical to those used in `wpa_cli`,
-    /// except all uppercase (eg `LIST_NETWORKS`, `SCAN`, etc)
-    ///
-    /// Control interface messages will be buffered as the command
-    /// runs, and will be returned on the next call to recv.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut wpa = wpactrl::Client::builder().open().unwrap();
-    /// assert_eq!(wpa.request("PING").unwrap(), "PONG\n");
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// * [`Error::Io`] - Low-level I/O error
-    /// * [`Error::Utf8ToStr`] - Corrupted message or message with non-UTF8 characters
-    /// * [`Error::Wait`] - Failed to wait on underlying Unix socket
-    pub fn request(&mut self, cmd: &str) -> Result<String> {
-        let mut messages = VecDeque::new();
-        let r = self.0.request(cmd, |s: &str| messages.push_front(s.into()));
-        self.1.extend(messages);
-        r
     }
 
     pub fn send_request(&mut self, cmd: &str) -> Result<()> {

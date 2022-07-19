@@ -51,7 +51,9 @@ async fn run_client(
                     .find(|line| line.starts_with("ssid="))
                     .map(|line| line[5..].trim());
 
-                tx.send(ssid.map(str::to_owned));
+                if let Err(_) = tx.send(ssid.map(str::to_owned)) {
+                    return Ok(());
+                }
             }
         }
 
