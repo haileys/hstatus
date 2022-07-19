@@ -38,9 +38,11 @@ async fn run_client(
     loop {
         let mut readable = client.readable_mut().await?;
 
+        let mut received_unsolicited = false;
+
         while let Some(msg) = readable.get_inner_mut().recv()? {
             if is_message_unsolicited(&msg) {
-                eprintln!("unsolicit: {:?}", msg);
+                received_unsolicited = true;
             } else {
                 // we only ever send status command, so all replies must be
                 // statuses. parse for SSID:
@@ -54,6 +56,10 @@ async fn run_client(
         }
 
         readable.clear_ready();
+
+        if received_unsolicited {
+            block_in_place(|| client.get_mut().send_request("STATUS").unwrap());
+        }
     }
 }
 
