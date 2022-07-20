@@ -11,7 +11,7 @@ pub fn battery(path: &Path) -> impl Stream<Item = Option<String>> {
     dedup(
         combine(charge_now, charge_full)
             .map(|(now, full)| {
-                now.zip(full).map(|(now, full)| {
+                now.flatten().zip(full.flatten()).map(|(now, full)| {
                     let percent = now * 100 / full;
                     format!("{}%", percent)
                 })
