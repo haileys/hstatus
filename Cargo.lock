@@ -182,6 +182,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hstatus"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "futures",
+ "futures-util",
+ "libc",
+ "structopt",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,19 +320,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bcdf212e9776fbcb2d23ab029360416bb1706b1aea2d1a5ba002727cbcab804"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "simple_status"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "futures",
- "futures-util",
- "libc",
- "structopt",
- "tokio",
- "tokio-stream",
 ]
 
 [[package]]

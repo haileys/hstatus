@@ -1,5 +1,5 @@
 [package]
-name = "simple_status"
+name = "hstatus"
 version = "0.1.0"
 edition = "2021"
 

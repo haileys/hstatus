@@ -1,4 +1,4 @@
-# simple_status
+# hstatus
 
 A very simple status command for swaybar. See `src/main.rs` to configure.
 
