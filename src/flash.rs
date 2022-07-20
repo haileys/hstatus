@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use futures::{Stream, StreamExt};
-use tokio::io::{self, AsyncBufRead, AsyncBufReadExt, BufReader};
+use tokio::io::{self, AsyncBufReadExt, BufReader};
 use tokio::net::UnixListener;
 use tokio::sync::watch;
 use tokio_stream::wrappers::{WatchStream, UnixListenerStream, LinesStream};
@@ -27,11 +27,11 @@ pub fn bind(path: &Path) -> Result<impl Stream<Item = Option<String>>, io::Error
         .filter_map(|line| async { line.ok() })
         .inspect({
             let tx = Arc::new(tx);
-            let mut cancel = None;
+            let mut _cancel = None;
 
-            move |line| {
+            move |_| {
                 let tx = tx.clone();
-                cancel = Some(defer(FLASH_DURATION, async move {
+                _cancel = Some(defer(FLASH_DURATION, async move {
                     let _ = tx.send(());
                 }));
             }
