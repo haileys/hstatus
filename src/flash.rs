@@ -8,6 +8,8 @@ use tokio::net::UnixListener;
 use tokio::sync::watch;
 use tokio_stream::wrappers::{WatchStream, UnixListenerStream, LinesStream};
 
+use crate::util::future::defer;
+
 const FLASH_DURATION: Duration = Duration::from_secs(1);
 
 pub fn bind(path: &Path) -> Result<impl Stream<Item = Option<String>>, io::Error> {
@@ -25,21 +27,13 @@ pub fn bind(path: &Path) -> Result<impl Stream<Item = Option<String>>, io::Error
         .filter_map(|line| async { line.ok() })
         .inspect({
             let tx = Arc::new(tx);
-            let mut cancel_task = None;
+            let mut cancel = None;
 
             move |line| {
                 let tx = tx.clone();
-
-                let new_task = tokio::spawn(async move {
-                    tokio::time::sleep(FLASH_DURATION).await;
+                cancel = Some(defer(FLASH_DURATION, async move {
                     let _ = tx.send(());
-                });
-
-                let prev_task = std::mem::replace(&mut cancel_task, Some(new_task));
-
-                if let Some(prev) = prev_task {
-                    prev.abort();
-                }
+                }));
             }
         });
 
