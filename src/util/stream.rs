@@ -19,6 +19,26 @@ pub fn combine<T, U>(left: impl Stream<Item = T>, right: impl Stream<Item = U>)
         })
 }
 
+pub fn combine_all<I, T>(streams: I) -> impl Stream<Item = Vec<Option<T>>>
+    where I: IntoIterator,
+          I::Item: Stream<Item = T> + Unpin,
+          T: Clone + 'static,
+{
+    let streams = streams.into_iter()
+        .enumerate()
+        .map(|(idx, stream)|
+            stream.map(move |item| (idx, item)))
+        .collect::<Vec<_>>();
+
+    let mut values = vec![None; streams.len()];
+
+    stream::select_all(streams)
+        .map(move |(idx, item)| {
+            values[idx] = Some(item);
+            values.clone()
+        })
+}
+
 pub fn dedup<T>(stream: impl Stream<Item = T>) -> impl Stream<Item = T>
     where T: Eq + Clone
 {

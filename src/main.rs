@@ -11,8 +11,7 @@ async fn main() {
         .segment("🔋 ", source::battery::battery(Path::new("/sys/class/power_supply/BAT0")))
         .segment("📶 ", source::wifi::ssid(Path::new("/var/run/wpa_supplicant/wlp4s0")))
         .segment("🕒 ", source::clock::clock())
-        .build()
-        .expect("could not build status line");
+        .build();
 
     futures::pin_mut!(status);
 
