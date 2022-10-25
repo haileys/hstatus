@@ -19,7 +19,7 @@ async fn main() {
     let opt = Opt::from_args();
 
     let status = status::LineBuilder::new()
-        .segment("🔋 ", source::battery::battery(Path::new("/sys/class/power_supply/BAT0")))
+        .segment("🔋 ", source::battery::auto())
         .segment("📶 ", source::wifi::ssid(Path::new("/var/run/wpa_supplicant/wlp4s0")))
         .segment("🕒 ", source::clock::clock())
         .build();
