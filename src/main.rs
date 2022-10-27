@@ -20,7 +20,7 @@ async fn main() {
 
     let status = status::LineBuilder::new()
         .segment("🔋 ", source::battery::auto())
-        .segment("📶 ", source::wifi::ssid(Path::new("/var/run/wpa_supplicant/wlp4s0")))
+        .segment("📶 ", source::wifi::wpa_supplicant::ssid(Path::new("/var/run/wpa_supplicant/wlp166s0")))
         .segment("🕒 ", source::clock::clock())
         .build();
 
