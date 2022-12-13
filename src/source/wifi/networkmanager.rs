@@ -31,7 +31,7 @@ pub fn network() -> impl Stream<Item = Option<String>> {
             .map(util::stream::flatten_result_stream));
 
     let primary_name_stream = primary_conn_stream
-        .and_then(|conn| async move { Ok(connection_name(conn).await) })
+        .and_then(|conn| connection_name(conn).map(Ok))
         .map(util::stream::flatten_result_stream);
 
     util::stream::follow_latest(primary_name_stream)
