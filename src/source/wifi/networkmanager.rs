@@ -1,4 +1,4 @@
-use futures::future;
+use futures::future::{self, FutureExt, TryFutureExt};
 use futures::stream::{self, Stream, StreamExt, TryStreamExt};
 use zbus::dbus_proxy;
 use zbus::zvariant::OwnedObjectPath;
@@ -25,16 +25,10 @@ trait ActiveConnection {
 }
 
 pub fn network() -> impl Stream<Item = Option<String>> {
-    let primary_conn_stream = util::stream::from_future(async move {
-        let dbus = zbus::Connection::system().await.unwrap();
-
-        let nm = NetworkManagerProxy::builder(&dbus)
-            .build()
-            .await
-            .unwrap();
-
-        primary_connection(nm).await
-    });
+    let primary_conn_stream = util::stream::from_future(
+        network_manager()
+            .and_then(|nm| primary_connection(nm).map(Ok))
+            .map(util::stream::flatten_result_stream));
 
     let primary_name_stream = primary_conn_stream
         .and_then(|conn| async move { Ok(connection_name(conn).await) })
@@ -44,6 +38,16 @@ pub fn network() -> impl Stream<Item = Option<String>> {
         .map(|result| result
             .map_err(|e| eprintln!("source::wifi::networkmanager: {:?}", e))
             .ok())
+}
+
+async fn network_manager() -> zbus::Result<NetworkManagerProxy<'static>> {
+    let dbus = zbus::Connection::system().await?;
+
+    let nm = NetworkManagerProxy::builder(&dbus)
+        .build()
+        .await?;
+
+    Ok(nm)
 }
 
 async fn primary_connection(proxy: NetworkManagerProxy<'_>) -> impl Stream<Item = zbus::Result<ActiveConnectionProxy<'_>>> + '_ {
